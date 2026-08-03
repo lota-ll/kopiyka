@@ -260,6 +260,6 @@ async def test_cross_tenant_access_returns_404(two_households) -> None:
                 "X-Household-Id": str(two_households["hh_b"]),
             },
         )
-    assert response.status_code == 404, (
-        f"очікувався 404, отримано {response.status_code}: 403 підтверджує існування чужого ресурсу"
-    )
+    assert (
+        response.status_code == 404
+    ), f"очікувався 404, отримано {response.status_code}: 403 підтверджує існування чужого ресурсу"
