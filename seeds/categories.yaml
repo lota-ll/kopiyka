@@ -1,0 +1,62 @@
+# Глобальний довідник категорій (household_id IS NULL).
+# Користувач може створити власні; правила категоризації посилаються сюди.
+- slug: groceries
+  name: Продукти
+  kind: expense
+  mcc: [5411, 5422, 5441, 5451, 5462, 5499]
+- slug: cafes
+  name: Кафе та ресторани
+  kind: expense
+  mcc: [5812, 5813, 5814]
+- slug: transport
+  name: Транспорт
+  kind: expense
+  mcc: [4111, 4121, 4131, 4784, 5541, 5542]
+- slug: utilities
+  name: Комунальні платежі
+  kind: expense
+  mcc: [4900]
+- slug: telecom
+  name: Зв'язок та інтернет
+  kind: expense
+  mcc: [4812, 4814, 4899]
+- slug: health
+  name: Здоров'я
+  kind: expense
+  mcc: [5912, 8011, 8021, 8062, 8071]
+- slug: clothing
+  name: Одяг та взуття
+  kind: expense
+  mcc: [5611, 5621, 5651, 5661, 5691]
+- slug: electronics
+  name: Техніка
+  kind: expense
+  mcc: [5732, 5734, 5045]
+- slug: entertainment
+  name: Розваги
+  kind: expense
+  mcc: [7832, 7841, 7922, 7929, 7991, 7996, 7997]
+- slug: home
+  name: Дім та ремонт
+  kind: expense
+  mcc: [5200, 5211, 5231, 5251, 5261, 5712, 5713, 5719]
+- slug: education
+  name: Освіта
+  kind: expense
+  mcc: [8211, 8220, 8241, 8244, 8249, 8299]
+- slug: transfers
+  name: Перекази
+  kind: transfer
+  mcc: [4829, 6012, 6051, 6540]
+- slug: cash
+  name: Готівка
+  kind: expense
+  mcc: [6010, 6011]
+- slug: income
+  name: Надходження
+  kind: income
+  mcc: []
+- slug: other
+  name: Інше
+  kind: expense
+  mcc: []
