@@ -5,10 +5,10 @@
 | Тиждень | Ціль | Ключовий deliverable |
 |---:|---|---|
 | **1** | Парсери | CLI `kopiyka-parse` для mono+privat, golden-тести, детекція кодування, зелений CI |
-| 2 | БД + ідемпотентний імпорт | Alembic, `dedup_hash`, повторний залив → 0 дублікатів |
+| 2 | БД + ідемпотентний імпорт | Alembic, `dedup_hash`, повторний залив → 0 дублікатів, матчинг internal transfers |
 | 3 | Multi-tenancy foundation | households/memberships, RLS, tenant isolation suite |
 | 4 | API + Cloudflare Access | FastAPI CRUD, upsert user з CF JWT, audit_log, export/delete |
-| 5 | Категоризація | MCC-довідник, rule engine, ручні override, internal transfer matching |
+| 5 | Категоризація | MCC-довідник, rule engine, ручні override |
 | 6 | Frontend | Static SPA на Cloudflare Pages, базові дашборди |
 | 7 | Власний auth | Google OIDC + magic link, міграція з CF Access |
 | 8 | Deploy на VM | Caddy, Cloudflare Tunnel, `pg_dump` → R2, **тест відновлення в CI** |

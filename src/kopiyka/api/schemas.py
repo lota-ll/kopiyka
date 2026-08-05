@@ -42,6 +42,7 @@ class AccountOut(BaseModel):
 class ImportResultOut(BaseModel):
     batch_id: uuid.UUID
     bank: str
+    source_format: str
     encoding: str
     parser_version: str
     rows_total: int
