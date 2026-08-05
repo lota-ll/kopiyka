@@ -53,8 +53,7 @@ services:
       - "127.0.0.1:8000:8000"
     depends_on:
       db:
-        healthcheck: &dep_healthy
-          condition: service_healthy
+        condition: service_healthy
       minio:
         condition: service_healthy
 

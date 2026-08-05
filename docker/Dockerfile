@@ -37,6 +37,7 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --chown=app:app migrations /app/migrations
 COPY --chown=app:app alembic.ini /app/alembic.ini
 COPY --chown=app:app seeds /app/seeds
+COPY --chown=app:app scripts /app/scripts
 
 ENV KOPIYKA_SEEDS_DIR=/app/seeds
 
