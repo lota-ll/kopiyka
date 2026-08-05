@@ -14,7 +14,9 @@
    отримує 404 (не 403!) на ресурси A. 403 підтвердив би існування
    ресурсу — це витік метаданих.
 
-Тести з БД пропускаються без ``KOPIYKA_TEST_DATABASE_URL``.
+Тести з БД пропускаються без ``KOPIYKA_TEST_DATABASE_URL`` (роль kopiyka_app,
+під якою виконується тестований код) та без ``KOPIYKA_MIGRATION_DATABASE_URL``
+(роль-власник, потрібна лише для сетапу тестових даних — див. ADMIN_DB_URL).
 """
 
 from __future__ import annotations
@@ -26,7 +28,22 @@ from dataclasses import dataclass
 import pytest
 
 DB_URL = os.environ.get("KOPIYKA_TEST_DATABASE_URL")
-requires_db = pytest.mark.skipif(not DB_URL, reason="потрібен KOPIYKA_TEST_DATABASE_URL")
+
+# Setup/teardown тестових даних — операція рівня платформи (аналог
+# admin_session у продакшн-коді), а не tenant-операція: create households
+# ДО того, як для них узагалі є tenant-контекст. Якщо робити це під
+# kopiyka_app (роль, навмисно обмежена RLS — див. ADR-0002), сам сетап
+# впаде з "new row violates row-level security policy": households
+# policy вимагає current_household() = id рядка, а на етапі створення
+# household цей контекст ще не існує. Тому фікстура підключається
+# роллю-власником, так само як міграції.
+ADMIN_DB_URL = os.environ.get("KOPIYKA_TEST_ADMIN_DATABASE_URL") or os.environ.get(
+    "KOPIYKA_MIGRATION_DATABASE_URL"
+)
+
+requires_db = pytest.mark.skipif(
+    not (DB_URL and ADMIN_DB_URL), reason="потрібні KOPIYKA_TEST_DATABASE_URL і admin-доступ"
+)
 
 
 @dataclass(frozen=True)
@@ -131,11 +148,16 @@ def test_tenant_routes_use_tenant_session() -> None:
 
 @pytest.fixture
 async def two_households():
-    """Створює два household з рахунком у кожному."""
+    """Створює два household з рахунком у кожному.
+
+    Підключається ADMIN_DB_URL (owner), не DB_URL (kopiyka_app): сетап
+    тестових даних відбувається до появи tenant-контексту, тому обмежена
+    роль тут би заблокувала сама себе через RLS.
+    """
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-    engine = create_async_engine(DB_URL)
+    engine = create_async_engine(ADMIN_DB_URL)
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
     hh_a, hh_b = uuid.uuid4(), uuid.uuid4()

@@ -51,12 +51,37 @@ async def tenant_session(household_id: uuid.UUID) -> AsyncIterator[AsyncSession]
 
 
 @asynccontextmanager
-async def admin_session() -> AsyncIterator[AsyncSession]:
-    """Сесія без tenant-контексту.
+async def identity_session(user_id: uuid.UUID) -> AsyncIterator[AsyncSession]:
+    """Сесія, у якій відома особа користувача, але household ще не обраний.
 
-    Дозволена **тільки** для операцій рівня платформи: автентифікація
-    (пошук користувача за email до того, як відомий household), міграції,
-    службові задачі. Ніколи не використовується в обробниках даних.
+    Потрібна для розв'язання "курки і яйця" автентифікації: щоб визначити,
+    до яких households належить користувач, треба прочитати ``memberships``
+    ще до того, як household узагалі відомий — а RLS-політика цієї таблиці
+    (міграція 0002) дозволяє читати або в межах активного household, або
+    власні рядки за ``user_id``. Ця сесія виставляє саме другий контекст.
+
+    Використовується виключно в auth-шарі (``deps.py``), у вузькому вікні
+    між моментом, коли особу встановлено, і моментом, коли household
+    обрано.
+    """
+    async with SessionFactory() as session, session.begin():
+        await session.execute(
+            text("SELECT set_config('app.user_id', :uid, true)"),
+            {"uid": str(user_id)},
+        )
+        yield session
+
+
+@asynccontextmanager
+async def admin_session() -> AsyncIterator[AsyncSession]:
+    """Сесія без будь-якого tenant-контексту.
+
+    Дозволена **тільки** для операцій рівня платформи, які не стосуються
+    RLS-таблиць: пошук користувача за email в ``users``/``identities``
+    (ці таблиці RLS не мають — вони не належать жодному household), а
+    також службові задачі. Ніколи не використовується для читання чи
+    запису в households/memberships/accounts/transactions і подібні —
+    для цього є ``tenant_session`` та ``identity_session``.
     """
     async with SessionFactory() as session:
         yield session

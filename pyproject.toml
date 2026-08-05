@@ -17,6 +17,7 @@ dependencies = [
     "charset-normalizer>=3.4",
     "pyyaml>=6.0",
     "boto3>=1.35",
+    "openpyxl>=3.1",
     "structlog>=24.4",
 ]
 
@@ -28,6 +29,7 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "types-PyYAML",
+    "types-openpyxl",
 ]
 
 [project.scripts]
@@ -69,6 +71,16 @@ exclude = ["migrations/"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# db/session.py навмисно створює engine ОДИН раз при імпорті модуля —
+# це правильний production-патерн (один пул з'єднань на процес), і саме
+# так буде працювати uvicorn у контейнері. Але пул asyncpg прив'язується
+# до event loop, активного в момент першого підключення. pytest-asyncio
+# за замовчуванням дає кожному тесту НОВИЙ loop і закриває попередній —
+# тоді другий і подальші тести, що торкаються БД, ловлять
+# "Event loop is closed", бо пул лишається підвішеним на мертвому loop.
+# Session-scope тут узгоджує тестовий event loop з часом життя engine.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 markers = [
     "db: тест потребує PostgreSQL (пропускається без DATABASE_URL)",
 ]

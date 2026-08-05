@@ -19,11 +19,11 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, Header, HTTPException, Request, status
 from jwt import PyJWKClient
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from kopiyka.config import Settings, get_settings
 from kopiyka.db.models import Household, Identity, Membership, User
-from kopiyka.db.session import admin_session
+from kopiyka.db.session import admin_session, identity_session
 
 _jwk_client: PyJWKClient | None = None
 
@@ -70,9 +70,13 @@ async def _verify_cf_access(token: str, settings: Settings) -> str:
 async def _resolve_user(email: str, provider: str, subject: str) -> User:
     """Знаходить або створює користувача.
 
-    Виконується в admin-сесії: household ще не відомий, тому RLS-контексту
-    на цьому кроці не існує. Це єдине легальне місце для admin_session
-    у шляху обробки запиту.
+    Виконується в admin-сесії: ``users``/``identities`` RLS не мають.
+    Виняток — гілка self-registration нижче: щоб вставити перший household
+    нового користувача, потрібен tenant-контекст ще ДО того, як household
+    існує в базі. Розв'язання — згенерувати ``id`` на клієнті заздалегідь
+    (не покладатись на server-side default) і виставити
+    ``app.household_id`` на це значення перед INSERT: рядок стає першим і
+    єдиним членом свого ж тенанта, і RLS WITH CHECK це дозволяє.
     """
     settings = get_settings()
     async with admin_session() as session, session.begin():
@@ -94,7 +98,12 @@ async def _resolve_user(email: str, provider: str, subject: str) -> User:
             user = User(email=email)
             session.add(user)
             await session.flush()
-            household = Household(name=f"Бюджет {email.split('@')[0]}")
+
+            household = Household(id=uuid.uuid4(), name=f"Бюджет {email.split('@')[0]}")
+            await session.execute(
+                text("SELECT set_config('app.household_id', :hh, true)"),
+                {"hh": str(household.id)},
+            )
             session.add(household)
             await session.flush()
             session.add(Membership(household_id=household.id, user_id=user.id, role="owner"))
@@ -127,7 +136,7 @@ async def get_principal(
 
     user = await _resolve_user(email, provider, subject)
 
-    async with admin_session() as session:
+    async with identity_session(user.id) as session:
         memberships = list(
             await session.scalars(select(Membership).where(Membership.user_id == user.id))
         )
