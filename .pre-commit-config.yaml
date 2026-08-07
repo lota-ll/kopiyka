@@ -10,8 +10,13 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
 
+  # rev тут МАЄ збігатися з версією ruff, запіненою в pyproject.toml.
+  # pre-commit встановлює для кожного hook-репо власне, ІЗОЛЬОВАНЕ
+  # середовище — воно не бачить .venv проєкту. Якщо версії розійдуться,
+  # `ruff format --check` у .venv і pre-commit-хук матимуть різну думку
+  # про канонічний стиль того самого рядка, і жоден коміт не пройде.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+    rev: v0.16.1
     hooks:
       - id: ruff
         args: [--fix]
